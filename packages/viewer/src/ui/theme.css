@@ -337,3 +337,15 @@
       100% 100%;
   }
 }
+
+/* Over the scene (the 3D stage, the 2D plan, and the toolbars floating on them) the content
+   underneath changes every frame: the camera orbits, the plan pans and zooms, hover redraws.
+   Chrome can't keep a backdrop-filter in step with that; it leaves stale or half-painted
+   tiles (dark boxes, blurred blobs, blank areas) until something else repaints. Those
+   overlays keep their translucent fill, without the blur. */
+[data-scene-data] [class*="backdrop-blur"],
+[data-pascal-viewer-3d] [class*="backdrop-blur"],
+[data-pascal-viewer-2d] [class*="backdrop-blur"] {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}

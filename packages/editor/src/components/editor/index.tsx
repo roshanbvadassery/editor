@@ -154,6 +154,7 @@ import { VectorEdgeExtractor } from './vector-edge-extractor'
 import { HostView } from './views/host-view'
 import { SceneRegion } from './views/scene-region'
 import { useActiveViewLayout, useEditorViews } from './views/use-editor-views'
+import { WalkFurnishSystem } from './walk-furnish'
 import { WallMeasurementLabel } from './wall-measurement-label'
 import { WallMoveSideHandles } from './wall-move-side-handles'
 import { WallOpeningHighlights } from './wall-opening-highlights'
@@ -994,6 +995,7 @@ const ViewerSceneContent = memo(function ViewerSceneContent({
       {!(isLoading || isFirstPersonMode) && <SnapAwareGrid />}
       {!(isLoading || noEditing) && <ToolManager />}
       {isFirstPersonMode && <FirstPersonControls />}
+      {isFirstPersonMode && !isCaptureMode && !isVersionPreviewMode && <WalkFurnishSystem />}
       {isCaptureMode && !isXRMode && <CaptureCameraRig />}
       {!isXRMode && <CustomCameraControls sceneReady={!isLoading} />}
       {!isXRMode && <FollowPascal />}
@@ -2100,6 +2102,7 @@ function EditorContent({
                       clutter the frame and offer a second, conflicting exit. */}
                   {isFirstPersonMode && !isCaptureMode && (
                     <FirstPersonOverlay
+                      furnish
                       onExit={() => useEditor.getState().setFirstPersonMode(false)}
                     />
                   )}
@@ -2175,7 +2178,10 @@ function EditorContent({
             />
             <RiserDiagramPanel />
             {isFirstPersonMode && (
-              <FirstPersonOverlay onExit={() => useEditor.getState().setFirstPersonMode(false)} />
+              <FirstPersonOverlay
+                furnish
+                onExit={() => useEditor.getState().setFirstPersonMode(false)}
+              />
             )}
           </ViewerOverlays>
         </>

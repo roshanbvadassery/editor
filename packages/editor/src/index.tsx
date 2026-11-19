@@ -597,6 +597,7 @@ export {
   resolveStructuralElevationSnap,
 } from './lib/elevation-guides'
 export { resolveCurrentBuildingId } from './lib/elevator-support'
+export { enterWalkthrough, exitWalkthrough } from './lib/enter-walkthrough'
 export type { ExportTextureUtils } from './lib/export-texture-utils'
 export { getFloatingMenuScale } from './lib/floating-menu-scale'
 export { startOpeningDraft } from './lib/floor-opening-draft'

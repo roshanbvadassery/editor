@@ -5,6 +5,7 @@ import { LiveWalkthroughController, useFirstPersonHud, useViewer } from '@pascal
 import { DroneHud, WalkthroughHud } from '@pascal-app/viewer/ui'
 import { useCallback } from 'react'
 import useEditor from '../../store/use-editor'
+import { WalkFurnishTray } from './walk-furnish'
 
 export function FirstPersonControls() {
   const capture = useEditor((state) => state.isCaptureMode)
@@ -28,7 +29,14 @@ export function FirstPersonControls() {
   )
 }
 
-export const FirstPersonOverlay = ({ onExit }: { onExit: () => void }) => {
+/** `furnish`: the editor's walk, where pausing (P) opens the furniture tray. */
+export const FirstPersonOverlay = ({
+  onExit,
+  furnish = false,
+}: {
+  onExit: () => void
+  furnish?: boolean
+}) => {
   const hasPlacedSpawn = useScene((state) =>
     Object.values(state.nodes).some((node) => node.type === 'spawn'),
   )
@@ -48,18 +56,21 @@ export const FirstPersonOverlay = ({ onExit }: { onExit: () => void }) => {
   if (isDroneMode) return <DroneHud onExit={handleExit} suspended={suspended} />
 
   return (
-    <WalkthroughHud
-      floorLabel={floorLabel}
-      interact={interact}
-      onExit={handleExit}
-      suspended={suspended}
-      zoneLabel={zoneLabel}
-    >
-      {!hasPlacedSpawn && (
-        <div className="corner-smooth rounded-full border border-border/40 bg-background/80 px-3 py-1 text-center text-muted-foreground text-xs shadow-elevation-3 backdrop-blur-xl">
-          Place a spawn point from the Build tab to control where walkthrough starts.
-        </div>
-      )}
-    </WalkthroughHud>
+    <>
+      {furnish && <WalkFurnishTray />}
+      <WalkthroughHud
+        floorLabel={floorLabel}
+        interact={interact}
+        onExit={handleExit}
+        suspended={suspended}
+        zoneLabel={zoneLabel}
+      >
+        {!hasPlacedSpawn && (
+          <div className="corner-smooth rounded-full border border-border/40 bg-background/80 px-3 py-1 text-center text-muted-foreground text-xs shadow-elevation-3 backdrop-blur-xl">
+            Place a spawn point from the Build tab to control where walkthrough starts.
+          </div>
+        )}
+      </WalkthroughHud>
+    </>
   )
 }

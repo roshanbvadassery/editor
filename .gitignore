@@ -59,3 +59,4 @@ og-test
 .claude/settings.local.json
 .vscode/launch.json
 .i18n-audit/
+.zopu-release/
