@@ -1017,15 +1017,23 @@ export default PostProcessingPasses
 function renderDirect(renderer: any, scene: Scene, camera: Camera) {
   const mask = camera.layers.mask
   const autoClear = renderer.autoClear
+  const background = scene.background
+  const backgroundNode = scene.backgroundNode
   try {
     camera.layers.disable(OVERLAY_LAYER)
     renderer.render(scene, camera)
     camera.layers.set(OVERLAY_LAYER)
     renderer.autoClear = false
     renderer.clearDepth()
+    // A node background (the daylight sky) is drawn on every render() call, not only on a clear,
+    // so the overlay pass would paint the sky over the scene: draw the overlays without it.
+    scene.background = null
+    scene.backgroundNode = null
     renderer.render(scene, camera)
   } finally {
     camera.layers.mask = mask
     renderer.autoClear = autoClear
+    scene.background = background
+    scene.backgroundNode = backgroundNode
   }
 }
