@@ -460,11 +460,13 @@ const PostProcessingPasses = ({
     // and a display-space vignette. Ink edges belong to the monochrome appearance only.
     const daylight = isDaylight(atmosphere)
     renderer.toneMapping = daylight ? NeutralToneMapping : ACESFilmicToneMapping
-    const aoTier =
-      ambientOcclusion && !perfDisable.ao && renderQuality !== 'low' ? renderQuality : null
-    const temporalAA = !transparentBackground && renderQuality !== 'low'
-    const fxaaEnabled = !transparentBackground && renderQuality === 'low'
-    const bloomEnabled = daylight && !transparentBackground && renderQuality === 'high'
+    // On WebGL (no WebGPU: older iPhones) the pipeline runs at the low tier whatever the chosen
+    // quality: its grade, vignette and FXAA work there, GTAO and TRAA are WebGPU-only.
+    const quality = (renderer as any).backend?.isWebGPUBackend ? renderQuality : 'low'
+    const aoTier = ambientOcclusion && !perfDisable.ao && quality !== 'low' ? quality : null
+    const temporalAA = !transparentBackground && quality !== 'low'
+    const fxaaEnabled = !transparentBackground && quality === 'low'
+    const bloomEnabled = daylight && !transparentBackground && quality === 'high'
     const outlineEnabled = !perfDisable.outline
     const inkEnabled = !daylight && edges !== 'off'
     const needsNormalMRT = inkEnabled || aoTier !== null || temporalAA
@@ -474,7 +476,7 @@ const PostProcessingPasses = ({
 
     console.log('[viewer/post-processing] Building pipeline', {
       version: pipelineVersion,
-      quality: renderQuality,
+      quality,
       outline: outlineEnabled,
       perfDisable,
       projectId,
@@ -487,21 +489,6 @@ const PostProcessingPasses = ({
     })
 
     hasPipelineErrorRef.current = false
-
-    // WebGPU availability check: GTAO, TRAA, and RenderPipeline are all
-    // WebGPU-only APIs. When the browser falls back to WebGL2 (no
-    // `navigator.gpu`, or the device couldn't be created), building the
-    // pipeline either throws silently or produces a broken output where
-    // the scene renders for a few frames and then goes black as the retry
-    // loop fights the direct-render fallback path. Short-circuit here so
-    // `useFrame` uses the direct `renderer.render(scene, camera)` path
-    // exclusively and never attempts the TSL pipeline.
-    const hasWebGPU = typeof navigator !== 'undefined' && 'gpu' in navigator
-    if (!hasWebGPU) {
-      hasPipelineErrorRef.current = true
-      resourcesRef.current = null
-      return
-    }
 
     // Clear outliner arrays synchronously to prevent stale Object3D refs
     // from the previous project leaking into the new pipeline's outline passes.

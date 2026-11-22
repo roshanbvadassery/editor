@@ -67,17 +67,18 @@ function TouchSession({ className, actions }: WalkthroughTouchControlsProps) {
       onPointerUp={gestures.up}
       style={{ touchAction: 'none' }}
     >
+      {/* Drag anywhere to look; the stick only wakes in the bottom-left, where the thumb rests. */}
       <div
-        className="absolute inset-y-0 left-0 w-1/2"
-        data-walkthrough-stick=""
-        onPointerDown={gestures.stickDown}
-        onPointerMove={gestures.stickMove}
-      />
-      <div
-        className="absolute inset-y-0 right-0 w-1/2"
+        className="absolute inset-0"
         data-walkthrough-look=""
         onPointerDown={gestures.lookDown}
         onPointerMove={gestures.lookMove}
+      />
+      <div
+        className="absolute bottom-0 left-0 h-[40%] w-1/2"
+        data-walkthrough-stick=""
+        onPointerDown={gestures.stickDown}
+        onPointerMove={gestures.stickMove}
       />
       {/* Resting stick: where the thumb goes (the stick itself floats to wherever it lands). */}
       <div
