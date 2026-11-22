@@ -34,6 +34,7 @@ import {
   smoothstep,
   time,
   color as tslColor,
+  context as tslContext,
   float as tslFloat,
   length as tslLength,
   uniform,
@@ -954,7 +955,9 @@ const PostProcessingPasses = ({
         }
         const submittedAt = PERF_OVERLAY_ENABLED ? performance.now() : 0
         timeSpan('render-encode', () => {
-          renderWithSceneMatrices(scene, () => renderDirect(renderer, scene, camera))
+          renderWithSceneMatrices(scene, () =>
+            renderDirect(renderer, scene, camera, isDaylight(atmosphere)),
+          )
         })
         if (PERF_OVERLAY_ENABLED) recordFrameGpuTiming(renderer, submittedAt)
       } catch (fallbackError) {
@@ -1014,14 +1017,19 @@ export default PostProcessingPasses
  * then overlays (selection highlights, room assemblies) draw over it with no scene-depth test,
  * like the composite, whether or not the camera already enables that layer.
  */
-function renderDirect(renderer: any, scene: Scene, camera: Camera) {
+function renderDirect(renderer: any, scene: Scene, camera: Camera, daylight: boolean) {
   const mask = camera.layers.mask
   const autoClear = renderer.autoClear
   const background = scene.background
   const backgroundNode = scene.backgroundNode
+  const rendererContext = renderer.contextNode
   try {
     camera.layers.disable(OVERLAY_LAYER)
+    // The daylight look's room light, as the pipeline's scene pass applies it: without it the sky
+    // lights interiors at full strength under the indoor exposure lift and they blow out to white.
+    if (daylight) renderer.contextNode = directRoomContext(rendererContext)
     renderer.render(scene, camera)
+    renderer.contextNode = rendererContext
     camera.layers.set(OVERLAY_LAYER)
     renderer.autoClear = false
     renderer.clearDepth()
@@ -1033,7 +1041,32 @@ function renderDirect(renderer: any, scene: Scene, camera: Camera) {
   } finally {
     camera.layers.mask = mask
     renderer.autoClear = autoClear
+    renderer.contextNode = rendererContext
     scene.background = background
     scene.backgroundNode = backgroundNode
   }
+}
+
+/**
+ * The renderer's context merged with the daylight room context (as PassNode merges a pass's
+ * contextNode), kept while the renderer's context is unchanged: a new context node every frame
+ * would rebuild every material's shader.
+ */
+let directRoomCache: { base: any; version: number; node: any } | null = null
+function directRoomContext(base: any) {
+  if (
+    !directRoomCache ||
+    directRoomCache.base !== base ||
+    directRoomCache.version !== base.version
+  ) {
+    directRoomCache = {
+      base,
+      version: base.version,
+      node: tslContext({
+        ...base.getFlowContextData(),
+        ...(daylightRoomContext() as any).getFlowContextData(),
+      }),
+    }
+  }
+  return directRoomCache!.node
 }
