@@ -155,6 +155,7 @@ import { HostView } from './views/host-view'
 import { SceneRegion } from './views/scene-region'
 import { useActiveViewLayout, useEditorViews } from './views/use-editor-views'
 import { WalkFurnishSystem } from './walk-furnish'
+import { WalkLookSystem } from './walk-look'
 import { WallMeasurementLabel } from './wall-measurement-label'
 import { WallMoveSideHandles } from './wall-move-side-handles'
 import { WallOpeningHighlights } from './wall-opening-highlights'
@@ -996,6 +997,7 @@ const ViewerSceneContent = memo(function ViewerSceneContent({
       {!(isLoading || noEditing) && <ToolManager />}
       {isFirstPersonMode && <FirstPersonControls />}
       {isFirstPersonMode && !isCaptureMode && !isVersionPreviewMode && <WalkFurnishSystem />}
+      {isFirstPersonMode && <WalkLookSystem />}
       {isCaptureMode && !isXRMode && <CaptureCameraRig />}
       {!isXRMode && <CustomCameraControls sceneReady={!isLoading} />}
       {!isXRMode && <FollowPascal />}
@@ -2066,7 +2068,9 @@ function EditorContent({
               overlays={
                 <>
                   <SceneRegion>
-                    {!(isCaptureMode || stageOverlay) && <FloatingLevelSelector />}
+                    {!(isCaptureMode || stageOverlay || (isFirstPersonMode && isMobile)) && (
+                      <FloatingLevelSelector />
+                    )}
                     {!(isVersionPreviewMode || isCaptureMode || isStudioMode) &&
                       (dockMenuOnTop ? (
                         // Own row under the toolbar, below the level selector's opening list (z-20).

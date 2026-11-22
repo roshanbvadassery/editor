@@ -8,10 +8,11 @@ import {
   usePascalI18n,
   useScene,
 } from '@pascal-app/core'
-import { ArrowLeft, ChevronRight, Layers } from 'lucide-react'
-import { type ComponentType, type ReactNode, useMemo } from 'react'
+import { ArrowLeft, ChevronDown, ChevronRight, Layers } from 'lucide-react'
+import { type ComponentType, type ReactNode, useMemo, useState } from 'react'
 import { markPerfAction } from '../../lib/perf-actions'
 import useViewer from '../../store/use-viewer'
+import { useIsMobile } from '../hooks/use-mobile'
 import { cn } from '../lib/cn'
 import { localizedLevelName } from '../lib/level-name'
 import { formatRoomArea } from '../lib/room-area'
@@ -93,6 +94,10 @@ export const ViewerSceneHeader = ({
   const selection = useViewer((s) => s.selection)
   const focusedUnitId = useViewer((s) => s.focusedUnitId)
   const unit = useViewer((s) => s.unit)
+  // The floor list opens by default on wide screens only: on a phone it would cover the scene.
+  const isMobile = useIsMobile()
+  const [levelsToggled, setLevelsToggled] = useState<boolean | null>(null)
+  const levelsOpen = levelsToggled ?? !isMobile
 
   const crumbs = useMemo(
     () =>
@@ -111,6 +116,7 @@ export const ViewerSceneHeader = ({
       .filter((node): node is LevelNode => node?.type === 'level')
       .sort((a, b) => b.level - a.level)
   }, [buildingId, nodes])
+  const currentLevel = levels.find((lvl) => lvl.id === selection.levelId)
   const sections = useMemo(
     () => (selection.levelId ? viewerSidebarSections(selection.levelId, nodes, i18n) : []),
     [selection.levelId, nodes, i18n, locale, catalogVersion],
@@ -210,89 +216,106 @@ export const ViewerSceneHeader = ({
 
       {levels.length > 0 && (
         <div className="corner-smooth pointer-events-auto flex min-h-0 w-56 flex-col overflow-hidden rounded-2xl border border-border/40 bg-background/95 py-1 shadow-elevation-4 backdrop-blur-xl transition-colors duration-200 ease-out">
-          <span className="px-3 py-2 font-medium text-[10px] text-muted-foreground uppercase tracking-wider">
-            {i18n._({ id: 'viewer.header.levels', message: 'Levels' })}
-          </span>
-          <div className="flex min-h-0 flex-col overflow-y-auto">
-            {levels.map((lvl) => {
-              const isSelected = lvl.id === selection.levelId
-              return (
-                <div key={lvl.id}>
-                  <button
-                    className={cn(
-                      'group/row relative flex h-8 w-full cursor-pointer select-none items-center border-border/50 border-r border-r-transparent border-b px-3 text-sm transition-all duration-200',
-                      isSelected
-                        ? 'border-r-3 border-r-white bg-accent/50 text-foreground'
-                        : 'text-muted-foreground hover:bg-accent/30 hover:text-foreground',
-                    )}
-                    onClick={() => {
-                      if (!isSelected) markPerfAction('level-switch', lvl.id)
-                      selectViewerLevel(lvl.id, source)
-                    }}
-                    type="button"
-                  >
-                    <div className="flex min-w-0 flex-1 items-center gap-2">
-                      <span
-                        className={cn(
-                          'flex h-4 w-4 shrink-0 items-center justify-center transition-all duration-200',
-                          !isSelected && 'opacity-60 grayscale',
-                        )}
-                      >
-                        <Layers className="h-3.5 w-3.5" />
-                      </span>
-                      <div className="min-w-0 flex-1 truncate text-left">
-                        {localizedLevelName(lvl, i18n, locale)}
-                      </div>
-                    </div>
-                  </button>
-                  {isSelected &&
-                    sections.map((section) => (
-                      <div
-                        className="border-border/50 border-b pb-1"
-                        data-viewer-section={section.kind}
-                        key={section.kind}
-                      >
-                        <span className="block px-3 pt-2 pb-1 pl-9 font-medium text-[10px] text-muted-foreground uppercase tracking-wider">
-                          {sectionTitle(section.kind, i18n)}
+          <button
+            aria-expanded={levelsOpen}
+            className="flex min-h-9 items-center gap-2 px-3 py-2 text-left font-medium text-[10px] text-muted-foreground uppercase tracking-wider transition-colors hover:text-foreground"
+            onClick={() => setLevelsToggled(!levelsOpen)}
+            type="button"
+          >
+            <span className="flex-1">
+              {i18n._({ id: 'viewer.header.levels', message: 'Levels' })}
+              {!levelsOpen && currentLevel && (
+                <span className="ml-2 text-foreground normal-case tracking-normal">
+                  {localizedLevelName(currentLevel, i18n, locale)}
+                </span>
+              )}
+            </span>
+            <ChevronDown
+              className={cn('h-3.5 w-3.5 transition-transform', !levelsOpen && '-rotate-90')}
+            />
+          </button>
+          {levelsOpen && (
+            <div className="flex min-h-0 flex-col overflow-y-auto">
+              {levels.map((lvl) => {
+                const isSelected = lvl.id === selection.levelId
+                return (
+                  <div key={lvl.id}>
+                    <button
+                      className={cn(
+                        'group/row relative flex h-8 w-full cursor-pointer select-none items-center border-border/50 border-r border-r-transparent border-b px-3 text-sm transition-all duration-200',
+                        isSelected
+                          ? 'border-r-3 border-r-white bg-accent/50 text-foreground'
+                          : 'text-muted-foreground hover:bg-accent/30 hover:text-foreground',
+                      )}
+                      onClick={() => {
+                        if (!isSelected) markPerfAction('level-switch', lvl.id)
+                        selectViewerLevel(lvl.id, source)
+                      }}
+                      type="button"
+                    >
+                      <div className="flex min-w-0 flex-1 items-center gap-2">
+                        <span
+                          className={cn(
+                            'flex h-4 w-4 shrink-0 items-center justify-center transition-all duration-200',
+                            !isSelected && 'opacity-60 grayscale',
+                          )}
+                        >
+                          <Layers className="h-3.5 w-3.5" />
                         </span>
-                        {section.rows.map((row) => {
-                          const active =
-                            section.kind === 'units'
-                              ? row.id === focusedUnitId
-                              : row.id === selection.zoneId
-                          return (
-                            <button
-                              className={cn(
-                                'flex h-7 w-full cursor-pointer select-none items-center gap-2 pr-3 pl-9 text-left text-sm transition-colors',
-                                active
-                                  ? 'bg-accent/50 text-foreground'
-                                  : 'text-muted-foreground hover:bg-accent/30 hover:text-foreground',
-                              )}
-                              key={row.id}
-                              onClick={() =>
-                                section.kind === 'units'
-                                  ? selectViewerUnit(row.id, source)
-                                  : selectViewerRoom(row.id, source)
-                              }
-                              type="button"
-                            >
-                              <span
-                                className="h-2 w-2 shrink-0 rounded-full"
-                                style={{ backgroundColor: row.color }}
-                              />
-                              <span className="min-w-0 flex-1 truncate">{row.label}</span>
-                              <span className="shrink-0 font-mono text-[11px] text-muted-foreground tabular-nums">
-                                {formatRoomArea(row.areaM2, unit, locale)}
-                              </span>
-                            </button>
-                          )
-                        })}
+                        <div className="min-w-0 flex-1 truncate text-left">
+                          {localizedLevelName(lvl, i18n, locale)}
+                        </div>
                       </div>
-                    ))}
-                </div>
-              )
-            })}
-          </div>
+                    </button>
+                    {isSelected &&
+                      sections.map((section) => (
+                        <div
+                          className="border-border/50 border-b pb-1"
+                          data-viewer-section={section.kind}
+                          key={section.kind}
+                        >
+                          <span className="block px-3 pt-2 pb-1 pl-9 font-medium text-[10px] text-muted-foreground uppercase tracking-wider">
+                            {sectionTitle(section.kind, i18n)}
+                          </span>
+                          {section.rows.map((row) => {
+                            const active =
+                              section.kind === 'units'
+                                ? row.id === focusedUnitId
+                                : row.id === selection.zoneId
+                            return (
+                              <button
+                                className={cn(
+                                  'flex h-7 w-full cursor-pointer select-none items-center gap-2 pr-3 pl-9 text-left text-sm transition-colors',
+                                  active
+                                    ? 'bg-accent/50 text-foreground'
+                                    : 'text-muted-foreground hover:bg-accent/30 hover:text-foreground',
+                                )}
+                                key={row.id}
+                                onClick={() =>
+                                  section.kind === 'units'
+                                    ? selectViewerUnit(row.id, source)
+                                    : selectViewerRoom(row.id, source)
+                                }
+                                type="button"
+                              >
+                                <span
+                                  className="h-2 w-2 shrink-0 rounded-full"
+                                  style={{ backgroundColor: row.color }}
+                                />
+                                <span className="min-w-0 flex-1 truncate">{row.label}</span>
+                                <span className="shrink-0 font-mono text-[11px] text-muted-foreground tabular-nums">
+                                  {formatRoomArea(row.areaM2, unit, locale)}
+                                </span>
+                              </button>
+                            )
+                          })}
+                        </div>
+                      ))}
+                  </div>
+                )
+              })}
+            </div>
+          )}
         </div>
       )}
     </div>

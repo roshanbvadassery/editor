@@ -20,13 +20,16 @@ afterEach(() => {
   useViewer.getState().setWalkthroughInputMode('desktop')
 })
 
-test('touch controls expose two surfaces and disable Interact until the HUD has a target', () => {
-  const empty = renderToStaticMarkup(<WalkthroughTouchControls className="host-skin" />)
+test('touch controls expose two surfaces and offer Interact only once the HUD has a target', () => {
+  const empty = renderToStaticMarkup(
+    <WalkthroughTouchControls actions={<button type="button">Ask</button>} className="host-skin" />,
+  )
   expect(empty).toContain('data-walkthrough-stick')
   expect(empty).toContain('data-walkthrough-look')
   expect(empty).toContain('touch-action:none')
   expect(empty).toContain('host-skin')
-  expect(empty).toMatch(/disabled=""[^>]*>Interact<\/button>/)
+  expect(empty).toContain('>Ask</button>')
+  expect(empty).not.toContain('door')
   expect(empty).toContain('>Jump</button>')
   expect(empty).toContain('>Exit</button>')
   expect(empty).toContain('>Crouch</button>')
@@ -34,7 +37,7 @@ test('touch controls expose two surfaces and disable Interact until the HUD has 
   expect(empty).not.toContain('>Close</button>')
   useFirstPersonHud.getState().setHud({ interact: { label: 'door', verb: 'open' } })
   Object.assign(useFirstPersonHud.getInitialState(), useFirstPersonHud.getState())
-  expect(renderToStaticMarkup(<WalkthroughTouchControls />)).not.toContain('disabled=""')
+  expect(renderToStaticMarkup(<WalkthroughTouchControls />)).toContain('>open door</span>')
 })
 
 test('controls are opt-in and keyboard hints disappear from the touch HUD', () => {

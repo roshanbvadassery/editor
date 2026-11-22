@@ -5097,6 +5097,8 @@ export function FloorplanPanel({
   // The studio workspace (renders / materials / item builder) is a clean
   // stage — editor viewport chrome, compass included, stays out of it.
   const isStudioWorkspace = useEditor((s) => s.workspaceMode === 'studio')
+  // The walkthrough's joystick owns the bottom-left corner.
+  const isFirstPersonMode = useEditor((s) => s.isFirstPersonMode)
   const elevators = useScene(
     useShallow((state) => {
       const building = currentBuildingId ? state.nodes[currentBuildingId] : null
@@ -11585,6 +11587,7 @@ export function FloorplanPanel({
         <FloorplanDrawingTypeSwitch className={planOnRight ? 'right-24 left-auto' : undefined} />
 
         {!isStudioWorkspace &&
+          !isFirstPersonMode &&
           sceneLeft !== null &&
           (levelNode?.type === 'level' || hasAmbientBuildingLevel) &&
           (compassHost ? (

@@ -59,6 +59,10 @@ export function EditorLayoutMobile({
 }: EditorLayoutMobileProps) {
   const hasScene = useSceneSpan() !== null
   const isCaptureMode = useEditor((s) => s.isCaptureMode)
+  // The walkthrough is full-bleed on a phone: the sheet and tab bar hide (kept mounted, so the
+  // sheet's height survives) and the touch controls own the whole screen.
+  const isFirstPersonMode = useEditor((s) => s.isFirstPersonMode)
+  const fullBleed = isCaptureMode || isFirstPersonMode
   const activePanel = useShownSidebarPanel(sidebarTabs)
   const setActivePanel = useEditor((s) => s.setActiveSidebarPanel)
   const panelSheetHeight = useEditor((s) => s.mobilePanelSheetHeight)
@@ -195,7 +199,7 @@ export function EditorLayoutMobile({
   // Otherwise, the viewer extends SHEET_OVERLAP_PX behind the sheet's rounded
   // corners so the curve reveals viewer content underneath.
   const baseViewerHeight = Math.max(0, middleH - effectiveSheetH)
-  const viewerHeight = isCaptureMode
+  const viewerHeight = fullBleed
     ? middleH
     : baseViewerHeight === 0
       ? 0
@@ -229,7 +233,7 @@ export function EditorLayoutMobile({
         {/* Viewer column: sized by committed sheet height */}
         <div className="absolute inset-x-0 top-0 overflow-hidden" style={{ height: viewerHeight }}>
           <div className="relative h-full w-full">
-            {(viewBar || viewerToolbarLeft || viewerToolbarRight) && !isCaptureMode && (
+            {(viewBar || viewerToolbarLeft || viewerToolbarRight) && !fullBleed && (
               <div className="pointer-events-none absolute top-3 right-3 left-3 z-20 flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
                   {viewBar && (
@@ -263,22 +267,26 @@ export function EditorLayoutMobile({
 
         {/* Bottom sheet: overlays the lower part of the middle area */}
         {!isCaptureMode && sidebarTabs.length > 0 && (
-          <BottomSheet
-            initialHeightPx={SHEET_HANDLE_PX}
-            onCommit={setCommittedSheetH}
-            ref={sheetRef}
-            snapPointsPx={snapPointsPx}
-          >
-            <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
-              {renderTabContent(activePanel)}
-              {sidebarOverlay && <div className="absolute inset-0 z-50">{sidebarOverlay}</div>}
-            </div>
-          </BottomSheet>
+          <div className={isFirstPersonMode ? 'hidden' : 'contents'}>
+            <BottomSheet
+              initialHeightPx={SHEET_HANDLE_PX}
+              onCommit={setCommittedSheetH}
+              ref={sheetRef}
+              snapPointsPx={snapPointsPx}
+            >
+              <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
+                {renderTabContent(activePanel)}
+                {sidebarOverlay && <div className="absolute inset-0 z-50">{sidebarOverlay}</div>}
+              </div>
+            </BottomSheet>
+          </div>
         )}
       </div>
 
       {!isCaptureMode && sidebarTabs.length > 0 && (
-        <MobileTabBar activeTab={barActiveTab} onTabPress={handleTabPress} tabs={barTabs} />
+        <div className={isFirstPersonMode ? 'hidden' : 'contents'}>
+          <MobileTabBar activeTab={barActiveTab} onTabPress={handleTabPress} tabs={barTabs} />
+        </div>
       )}
     </div>
   )

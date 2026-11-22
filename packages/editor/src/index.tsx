@@ -278,6 +278,7 @@ export {
   ThumbnailGenerator,
 } from './components/editor/thumbnail-generator'
 export { PLUGINS_VIEW_ID } from './components/editor/views/use-editor-views'
+export { captureWalkLook } from './components/editor/walk-look'
 export { WallMoveSideHandles } from './components/editor/wall-move-side-handles'
 export { WallPushArrow } from './components/editor/wall-push-arrow'
 export { useWallsBelowSetting } from './components/editor-2d/floorplan-adjacent-walls-layer'
